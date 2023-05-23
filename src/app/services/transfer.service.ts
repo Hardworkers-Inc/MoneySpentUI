@@ -12,15 +12,23 @@ export class TransferService {
   constructor(private httpService: HttpService) {
   }
 
-  getTransfers(): Observable<Transfer[]> {
+  get(): Observable<Transfer[]> {
     return this.httpService.get<Transfer[]>(this._transferPath);
   }
 
-  addTransfer(transfer: Transfer): Observable<Transfer[]> {
+  getById(id: number): Observable<Transfer> {
+    return this.httpService.get<Transfer>(`${this._transferPath}/${id}`);
+  }
+
+  create(transfer: Transfer): Observable<Transfer[]> {
     return this.httpService.post<Transfer[]>(this._transferPath, transfer);
   }
 
-  deleteTransfer(id: any): Observable<any> {
+  update(transfer: Transfer): Observable<Transfer[]> {
+    return this.httpService.put<Transfer[]>(this._transferPath, transfer);
+  }
+
+  delete(id: any): Observable<any> {
     return this.httpService.delete(`${this._transferPath}/${id}`);
   }
 }

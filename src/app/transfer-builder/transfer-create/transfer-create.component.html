@@ -5,8 +5,8 @@
   </div>
   <div class="bottom-container">
     <div class="controls-container">
-      <button class="control-button" routerLink="/my-wallet">Cancel</button>
-      <button class="control-button" (click)="onClickSave()" [disabled]="transferForm?.invalid">Save</button>
+      <button class="control-button" (click)="onCancelClick()">Cancel</button>
+      <button class="control-button" (click)="onSaveClick()" [disabled]="transferForm?.invalid">Save</button>
     </div>
     <form [formGroup]="transferForm" novalidate>
       <div class="data-form">
@@ -75,7 +75,7 @@
           </label>
           <input class="data-enter data-input-date" type="datetime-local" name="datetime" id="datetime"
                  [ngClass]="getErroredFieldClass(dateTime)"
-                 formControlName="time">
+                 formControlName="dateTime">
           <div class="now-button control-button" (click)="onNowClick()">Now</div>
         </div>
       </div>

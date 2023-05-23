@@ -1,12 +1,12 @@
-import { TestBed } from '@angular/core/testing';
+import {TestBed} from '@angular/core/testing';
 
-import { TransferService } from './transfer.service';
-import { HttpService } from "./http.service";
-import { HttpClientTestingModule } from "@angular/common/http/testing";
-import { CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
-import { Transfer } from "../models/transfer";
-import { TransferType } from "../models/transferType";
-import { of } from "rxjs";
+import {TransferService} from './transfer.service';
+import {HttpService} from "./http.service";
+import {HttpClientTestingModule} from "@angular/common/http/testing";
+import {CUSTOM_ELEMENTS_SCHEMA} from "@angular/core";
+import {Transfer} from "../models/transfer";
+import {TransferType} from "../models/transferType";
+import {of} from "rxjs";
 
 describe('TransferService', () => {
   let transferService: TransferService;
@@ -42,7 +42,7 @@ describe('TransferService', () => {
 
   it('should get all medical codes', () => {
     httpService.get.and.returnValue(of([transfer]));
-    transferService.getTransfers().subscribe(() => {
+    transferService.get().subscribe(() => {
       expect(httpService.get).toHaveBeenCalledWith(path)
     })
   });

@@ -6,6 +6,9 @@ import {FormState} from "./form-state";
 import {ExampleHeader} from "./datepicker-header";
 import {Transfer} from "../../models/transfer";
 import {ActivatedRoute, Router} from "@angular/router";
+import {DateTimeUtils} from "../../shared/date-time-utils";
+import {MatDialog, MatDialogConfig} from "@angular/material/dialog";
+import {PopupComponent} from "../../popup/popup.component";
 
 @Component({
   selector: 'app-transfer-create',
@@ -24,15 +27,30 @@ export class TransferCreateComponent implements OnInit {
   secondButtonPress = false;
   exampleHeader = ExampleHeader;
 
+  transferId: number | undefined
+  isEdit: boolean = false
+
   constructor(
     private transferService: TransferService,
     private formBuilder: FormBuilder,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private dialog: MatDialog,
   ) {
   }
 
   ngOnInit(): void {
+    this.generateForm();
+    this.route.params.subscribe(params => {
+      if (params.hasOwnProperty("transferId")) {
+        this.transferId = params["transferId"]
+        this.isEdit = true
+        this.setDataToFields(this.transferId!)
+      }
+    })
+  }
+
+  generateForm(): void {
     this.transferForm = this.formBuilder.group({
       title: [new FormState("", this.disabled),
         [Validators.required, this.noWhitespaceValidator, Validators.maxLength(50)]],
@@ -40,10 +58,17 @@ export class TransferCreateComponent implements OnInit {
         [Validators.maxLength(300)]],
       transferType: [new FormState(TransferType.INCOME, this.disabled),
         [Validators.required, this.noWhitespaceValidator]],
-      time: [new FormState(undefined, this.disabled),
-        [Validators.required, this.noWhitespaceValidator]],
+      dateTime: [new FormState(undefined, this.disabled),
+        [Validators.required]],
       count: [new FormState("", this.disabled),
         [Validators.required, Validators.pattern('^[0-9]+(\.[0-9]?)?$')]]
+    })
+  }
+
+  setDataToFields(transferId: number): void {
+    this.transferService.getById(transferId).subscribe((transfer: Transfer) => {
+      transfer.dateTime = DateTimeUtils.fromArrayToFormatString(transfer.dateTime)
+      this.transferForm.patchValue(transfer);
     })
   }
 
@@ -64,7 +89,7 @@ export class TransferCreateComponent implements OnInit {
   }
 
   get dateTime(): FormControl {
-    return this.transferForm.get("time") as FormControl
+    return this.transferForm.get("dateTime") as FormControl
   }
 
   get count(): FormControl {
@@ -85,12 +110,46 @@ export class TransferCreateComponent implements OnInit {
     this.secondButtonPress = true;
   }
 
-  onClickSave() {
+  onSaveClick(): void {
     let newTransfer = this.generateTransfer()
-    this.transferService.addTransfer(newTransfer).subscribe(() => {
-      this.router.navigate(['../'], {relativeTo: this.route})
-    })
-    console.log(newTransfer)
+    if (this.isEdit) {
+      newTransfer.id = this.transferId
+      this.transferService.update(newTransfer).subscribe(() => {
+        this.redirect()
+      })
+    } else {
+      this.transferService.create(newTransfer).subscribe(() => {
+        this.redirect()
+      })
+    }
+  }
+
+  onCancelClick(): void {
+    if (this.transferForm.dirty) {
+      this.openDialogOnCancel()
+    } else {
+      this.redirect()
+    }
+  }
+
+  openDialogOnCancel() {
+    const dialogConfig = new MatDialogConfig();
+
+    dialogConfig.disableClose = true;
+    dialogConfig.autoFocus = true;
+
+    dialogConfig.data = {
+      question: 'Are you sure you want to discard your changes?',
+      firstButton: 'Cancel',
+      secondButton: 'Discard changes'
+    };
+
+    const dialogRef = this.dialog.open(PopupComponent, dialogConfig);
+    dialogRef.afterClosed().subscribe((data) => {
+      if (data) {
+        this.redirect()
+      }
+    });
   }
 
   generateTransfer(): Transfer {
@@ -110,14 +169,8 @@ export class TransferCreateComponent implements OnInit {
     return isValid ? null : {'whitespace': true};
   }
 
-  onNowClick() {
-    let now = new Date();
-    let result = now.getFullYear() + '-'
-      + TransferCreateComponent.formatDecimal(now.getMonth() + 1) + '-'
-      + TransferCreateComponent.formatDecimal(now.getDate()) + 'T'
-      + TransferCreateComponent.formatDecimal(now.getHours()) + ':'
-      + TransferCreateComponent.formatDecimal(now.getMinutes())
-    this.dateTime.patchValue(result)
+  onNowClick(): void {
+    this.dateTime.patchValue(DateTimeUtils.getNowDateTimeInString())
   }
 
   getErroredFieldClass(formControl: FormControl): string {
@@ -128,7 +181,8 @@ export class TransferCreateComponent implements OnInit {
     return formControl.invalid && formControl.touched
   }
 
-  private static formatDecimal(value: number): string {
-    return (value > 10 ? '' : '0') + value
+  private redirect(): void {
+    let path = this.isEdit ? '../../' : '../'
+    this.router.navigate([path], {relativeTo: this.route})
   }
 }

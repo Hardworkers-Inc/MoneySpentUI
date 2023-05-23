@@ -4,6 +4,8 @@ import {TransferType} from "../../models/transferType";
 import {TransferService} from "../../services/transfer.service";
 import {MatDialog, MatDialogConfig} from "@angular/material/dialog";
 import {PopupComponent} from "../../popup/popup.component";
+import {ActivatedRoute, Router} from "@angular/router";
+import {DateTimeUtils} from "../../shared/date-time-utils";
 
 @Component({
   selector: 'app-transfers',
@@ -19,7 +21,9 @@ export class TransfersComponent implements OnInit {
 
   constructor(
     private transferService: TransferService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router,
+    private route: ActivatedRoute
   ) {
   }
 
@@ -28,18 +32,14 @@ export class TransfersComponent implements OnInit {
   }
 
   loadData() {
-    this.transferService.getTransfers()
+    this.transferService.get()
       .subscribe((transfers: Transfer[]) => {
         this.transfers = transfers
       })
   }
 
   setDateAndTime(dateAndTime: any): string {
-    let date: string[] = [];
-    for (let i = 0; i < 5; i++) {
-      date.push((dateAndTime[i] < 10 ? '0' : '') + dateAndTime[i])
-    }
-    return date[0] + '.' + date[2] + '.' + date[1] + ' ' + date[3] + ':' + date[4]
+    return DateTimeUtils.fromArrayToViewingString(dateAndTime)
   }
 
   openDialog(idTransfer: any) {
@@ -57,10 +57,14 @@ export class TransfersComponent implements OnInit {
     const dialogRef = this.dialog.open(PopupComponent, dialogConfig);
     dialogRef.afterClosed().subscribe((data) => {
       if (data) {
-        this.transferService.deleteTransfer(idTransfer).subscribe(() => {
+        this.transferService.delete(idTransfer).subscribe(() => {
           this.loadData();
         });
       }
     });
+  }
+
+  onEditClick(idTransfer: any) {
+    this.router.navigate([idTransfer, 'edit'], {relativeTo: this.route})
   }
 }
